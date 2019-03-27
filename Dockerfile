@@ -4,8 +4,7 @@ COPY docker-tags /
 
 RUN \
     apk add --no-cache curl jq && \
-    adduser -D user && \
-    chmod a+x /docker-tags
+    adduser -D user
 
 USER user
 
