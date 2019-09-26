@@ -2,12 +2,16 @@
 # original source: https://stackoverflow.com/questions/28320134/how-to-list-all-tags-for-a-docker-image-on-a-remote-registry/51921869#51921869
 for item in "$@"; do
 	case "${item}" in
+		*:*) regex="$(echo "${item}" | cut -d: -f2)" && item="$(echo "${item}" | cut -d: -f1)" ;;
+		*) regex="" ;;
+	esac
+	case "${item}" in
 		*/*) ;;
 		*) item="library/${item}" ;;
 	esac
 	tokenUri="https://auth.docker.io/token"
 	token="$(curl --silent --get --data-urlencode "service=registry.docker.io" --data-urlencode "scope=repository:$item:pull" $tokenUri | jq --raw-output '.token')"
 	listUri="https://registry-1.docker.io/v2/$item/tags/list"
-	result="$(curl --silent --get -H "Accept: application/json" -H "Authorization: Bearer $token" $listUri | jq '.name, (.tags | sort_by(. | split("[\\.-]"; "") | map(try tonumber catch .)) | reverse)')"
+	result="$(curl --silent --get -H "Accept: application/json" -H "Authorization: Bearer $token" $listUri | jq ".name, (.tags | map(select(test(\"${regex}\"))) | sort_by(. | split(\"[\\\\.-]\"; \"\") | map(try tonumber catch .)) | reverse)")"
 	echo $result
 done
